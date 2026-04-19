@@ -7,6 +7,11 @@ if(!isset($_SESSION['user'])) {
     exit();
 }
 
+// Prevent caching to ensure logout works securely on 'back' button
+header("Cache-Control: no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // Handle booking cancellation
 if(isset($_GET['cancel'])) {
     $booking_id = (int)$_GET['cancel'];
@@ -44,18 +49,10 @@ include("includes/header.php");
 
     <!-- TOP BAR -->
     <div class="admin-topbar">
-        <h2>Welcome, <?php echo $_SESSION['user']; ?> 👋</h2>
-
-        <div>
-            <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 'admin') { ?>
-                <a href="admin/admin_dashboard.php" class="admin-btn">Admin Panel</a>
-            <?php } ?>
-
-            <a href="logout.php" class="logout-btn">Logout</a>
-        </div>
+        <h2>Welcome, <?php echo htmlspecialchars($_SESSION['user']); ?> 👋</h2>
     </div>
 
-    <h3 style="margin-top:20px;">Available Parking Slots</h3>
+    <h3 class="mb-2" style="font-family:'Outfit',sans-serif; color:var(--ink);">Available Parking Slots</h3>
 
     <!-- SLOT GRID -->
     <div class="slot-container">
@@ -67,10 +64,10 @@ include("includes/header.php");
         ?>
             <div class="slot-card <?php echo $row['status']; ?>">
                 
-                <h3><?php echo $row['slot_number']; ?></h3>
+                <h3><?php echo htmlspecialchars($row['slot_number']); ?></h3>
 
                 <?php if($row['status'] == 'available') { ?>
-                    <a href="book_slot.php?id=<?php echo $row['id']; ?>" class="book-btn">Book Now</a>
+                    <a href="book_slot.php?id=<?php echo $row['id']; ?>" class="btn btn-primary" style="margin-top:auto;">Book Now</a>
                 <?php } else { ?>
                     <p class="occupied-text">Occupied</p>
                 <?php } ?>
@@ -81,10 +78,10 @@ include("includes/header.php");
     </div>
 
     <!-- USER'S BOOKINGS -->
-    <div class="admin-card" style="margin-top:40px;">
+    <div class="table-container" style="margin-top: 3rem;">
         <h3 class="table-title">Your Bookings</h3>
 
-        <table class="admin-table">
+        <table>
             <thead>
                 <tr>
                     <th>Slot</th>
@@ -108,11 +105,12 @@ include("includes/header.php");
                         while($row = $result->fetch_assoc()) {
                 ?>
                 <tr>
-                    <td><?php echo htmlspecialchars($row['slot_number']); ?></td>
+                    <td><strong><?php echo htmlspecialchars($row['slot_number']); ?></strong></td>
                     <td><?php echo date("d M Y, h:i A", strtotime($row['booking_time'])); ?></td>
                     <td>
                         <a href="dashboard.php?cancel=<?php echo $row['id']; ?>" 
-                           class="cancel-btn"
+                           class="btn btn-danger"
+                           style="padding: 0.4rem 0.8rem; font-size:0.8rem;"
                            onclick="return confirm('Cancel this booking?')">
                            Cancel
                         </a>
@@ -121,10 +119,10 @@ include("includes/header.php");
                 <?php 
                         }
                     } else {
-                        echo "<tr><td colspan='3'>No bookings found</td></tr>";
+                        echo "<tr><td colspan='3' style='text-align:center; color:var(--ink-mute);'>No bookings found</td></tr>";
                     }
                 } else {
-                    echo "<tr><td colspan='3'>No bookings found</td></tr>";
+                    echo "<tr><td colspan='3' style='text-align:center; color:var(--ink-mute);'>No bookings found</td></tr>";
                 }
                 ?>
             </tbody>

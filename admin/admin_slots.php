@@ -8,6 +8,11 @@ if(!isset($_SESSION['role']) || $_SESSION['role'] != 'admin') {
     exit();
 }
 
+// Prevent caching to ensure logout works securely on 'back' button
+header("Cache-Control: no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // ➕ Add Slot
 if(isset($_POST['add_slot'])) {
     $slot_number = mysqli_real_escape_string($conn, trim($_POST['slot_number']));
@@ -15,7 +20,7 @@ if(isset($_POST['add_slot'])) {
     if(mysqli_query($conn, $query)) {
         $msg = "Slot added successfully.";
     } else {
-        $msg = "Error adding slot. It may already exist.";
+        $error = "Error adding slot. It may already exist.";
     }
 }
 
@@ -34,23 +39,29 @@ if(isset($_GET['delete'])) {
 <div class="dashboard">
     <div class="admin-topbar">
         <h2>Manage Parking Slots</h2>
-        <div>
-            <a href="admin_dashboard.php" class="admin-btn">Dashboard</a>
-            <a href="../logout.php" class="admin-btn admin-logout">Logout</a>
+        <div class="topbar-actions">
+            <a href="admin_dashboard.php" class="btn btn-secondary">Dashboard</a>
+            <a href="../logout.php" class="btn btn-danger">Logout</a>
         </div>
     </div>
 
-    <div class="admin-card">
+    <div class="table-container">
+        <h3 class="table-title">Add New Slot</h3>
+        
         <?php if(isset($msg)): ?>
-            <p class="msg" style="color:#16a34a; margin-bottom:18px; font-weight:600;"><?php echo $msg; ?></p>
+            <div class="alert alert-success"><?php echo $msg; ?></div>
+        <?php endif; ?>
+        <?php if(isset($error)): ?>
+            <div class="alert alert-error"><?php echo $error; ?></div>
         <?php endif; ?>
 
-        <form method="POST" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:20px;">
-            <input type="text" name="slot_number" placeholder="Enter slot number (e.g. A5)" required style="padding:10px; border:1px solid #cbd5e1; border-radius:8px; min-width:220px;">
-            <button type="submit" name="add_slot" class="admin-btn" style="padding:10px 18px;">Add Slot</button>
+        <form method="POST" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:3rem;">
+            <input type="text" name="slot_number" class="input-field" placeholder="Enter slot number (e.g. A5)" required style="margin-bottom:0; min-width:220px; flex:1; max-width:300px;">
+            <button type="submit" name="add_slot" class="btn btn-primary" style="padding:0.75rem 1.2rem;">Add Slot</button>
         </form>
 
-        <table class="admin-table">
+        <h3 class="table-title">All Slots</h3>
+        <table>
             <thead>
                 <tr>
                     <th>ID</th>
@@ -67,16 +78,22 @@ if(isset($_GET['delete'])) {
                 ?>
                 <tr>
                     <td><?php echo $row['id']; ?></td>
-                    <td><?php echo htmlspecialchars($row['slot_number']); ?></td>
-                    <td><?php echo ucfirst($row['status']); ?></td>
+                    <td><strong><?php echo htmlspecialchars($row['slot_number']); ?></strong></td>
                     <td>
-                        <a href="admin_slots.php?delete=<?php echo $row['id']; ?>" class="cancel-btn" onclick="return confirm('Delete this slot?');">Delete</a>
+                        <?php if($row['status'] == 'available'): ?>
+                            <span style="color:var(--success); font-weight:600; background:var(--success-bg); padding:4px 8px; border-radius:100px; font-size:0.8rem;">Available</span>
+                        <?php else: ?>
+                            <span style="color:var(--accent); font-weight:600; background:var(--accent-light); padding:4px 8px; border-radius:100px; font-size:0.8rem;">Occupied</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <a href="admin_slots.php?delete=<?php echo $row['id']; ?>" class="btn btn-danger" style="padding:0.4rem 0.8rem; font-size:0.8rem;" onclick="return confirm('Delete this slot?');">Delete</a>
                     </td>
                 </tr>
                 <?php
                     }
                 } else {
-                    echo '<tr><td colspan="4">No slots found.</td></tr>';
+                    echo '<tr><td colspan="4" class="text-center" style="color:var(--ink-mute);">No slots found.</td></tr>';
                 }
                 ?>
             </tbody>
